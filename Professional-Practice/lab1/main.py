@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from matplotlib import pyplot as plt
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
 
-# 1. 载入并处理数据
 digits = load_digits()
 X, y = digits.data, digits.target
 
@@ -21,7 +20,6 @@ X_train = scaler.fit_transform(X_train)
 X_val = scaler.transform(X_val)
 X_test = scaler.transform(X_test)
 
-print(f"数据划分完成: Train {X_train.shape}, Val {X_val.shape}, Test {X_test.shape}")
 
 
 # 2. 转换为 Tensor 并创建 DataLoader
@@ -98,14 +96,26 @@ torch.save(model.state_dict(), 'mlp_model.pth')
 
 # 加载并再次验证
 new_model = SimpleMLP()
-new_model.load_state_dict(torch.load('mlp_model.pth'))
+new_model.load_state_dict(torch.load('mlp_model.pth')) # 加载保存的权重
 new_model.eval()
-# (此处再次计算 acc 的代码同上)
 
-# 6. 绘图
+new_test_correct = 0
+with torch.no_grad(): # 加载后验证同样不需要计算梯度
+    for bx, by in test_loader:
+        outputs = new_model(bx)
+        preds = outputs.argmax(dim=1)
+        new_test_correct += (preds == by).sum().item()
+
+new_test_acc = new_test_correct / len(X_test)
+print(f"验证加载后的模型 - Test Accuracy: {new_test_acc:.4f}")
+
+#两个 accuracy 完全一致
+
+# 6. 绘制 Training Loss 曲线
+plt.figure()
 plt.plot(range(1, epochs + 1), train_losses, marker='o')
 plt.xlabel('Epoch')
 plt.ylabel('Average Train Loss')
 plt.title('Training Loss Curve')
 plt.grid(True)
-plt.savefig('training_loss_curve—lab1.png')
+plt.show()
